@@ -74,6 +74,8 @@ class MainApplication(tk.Tk):
         ttk.Button(self.general_visual_window, text="Nombre de réclamations par état", command=self.plot_bar_chart).pack(pady=10)
         ttk.Button(self.general_visual_window, text="Distribution des réclamations totales", command=self.plot_total_claims_histogram).pack(pady=10)
         ttk.Button(self.general_visual_window, text="Heatmap des corrélations", command=self.plot_heatmap).pack(pady=10)
+        ttk.Button(self.general_visual_window, text="Pie Chart - Fraud Reported", command=self.plot_fraud_reported_pie_chart).pack(pady=10)
+
 
     def open_fraud_visualization_window(self):
         self.fraud_visual_window = tk.Toplevel(self)
@@ -91,6 +93,8 @@ class MainApplication(tk.Tk):
         ttk.Button(self.fraud_visual_window, text="Count Plot - Fraud by Incident Hour", command=self.plot_fraud_by_incident_hour).pack(pady=10)
         ttk.Button(self.fraud_visual_window, text="Count Plot - Fraud by Bodily Injuries", command=self.plot_fraud_by_bodily_injuries).pack(pady=10)
         ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Vehicle Claim", command=self.plot_fraud_by_vehicle_claim).pack(pady=10)
+        ttk.Button(self.general_visual_window, text="Pie Chart - Fraud Reported", command=self.plot_fraud_reported_pie_chart).pack(pady=10)
+
 
 
 
@@ -155,6 +159,18 @@ class MainApplication(tk.Tk):
         ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=['red', 'blue'])
         ax.set_title('Proportion de fraudes')
         self.display_figure(fig)
+
+    def plot_fraud_reported_pie_chart(self):
+        data = self.db_manager.fetch_all_data()
+        fraud_counts = data['fraud_reported'].value_counts()
+        
+        # Create the pie chart
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.pie(fraud_counts, labels=fraud_counts.index, autopct='%1.1f%%', startangle=90, colors=['blue', 'red'])
+        ax.set_title('Répartition des fraudes signalées')
+        ax.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        self.display_figure(fig)
+
 
     def plot_fraud_by_age_group(self):
         data = self.db_manager.fetch_all_data()
