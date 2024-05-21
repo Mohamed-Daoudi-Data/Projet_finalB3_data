@@ -90,6 +90,8 @@ class MainApplication(tk.Tk):
         ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Capital Loss", command=self.plot_fraud_by_capital_loss).pack(pady=10)
         ttk.Button(self.fraud_visual_window, text="Count Plot - Fraud by Incident Hour", command=self.plot_fraud_by_incident_hour).pack(pady=10)
         ttk.Button(self.fraud_visual_window, text="Count Plot - Fraud by Bodily Injuries", command=self.plot_fraud_by_bodily_injuries).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Vehicle Claim", command=self.plot_fraud_by_vehicle_claim).pack(pady=10)
+
 
 
     def plot_histogram(self):
@@ -264,6 +266,20 @@ class MainApplication(tk.Tk):
         ax.set_xlabel('Blessures corporelles')
         ax.set_ylabel('Nombre de cas')
         ax.legend(title='Fraud Reported', labels=['No', 'Yes'])
+        self.display_figure(fig)
+
+    def plot_fraud_by_vehicle_claim(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.boxplot(x='fraud_reported', y='vehicle_claim', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des réclamations de véhicules par rapport aux fraudes')
+        ax.set_xlabel('Fraud Reported')
+        ax.set_ylabel('Vehicle Claim')
+        ax.set_xticklabels(['No', 'Yes'])
         self.display_figure(fig)
 
 
