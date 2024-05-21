@@ -35,7 +35,7 @@ class MainApplication(tk.Tk):
         content_frame = ttk.Frame(self, padding="3 3 12 12")
         content_frame.pack(fill=tk.BOTH, expand=True)
 
-        visual_button = ttk.Button(content_frame, text="Visualisation", command=self.open_visualization_window)
+        visual_button = ttk.Button(content_frame, text="Visualisation", command=self.open_visualization_type_window)
         visual_button.pack(pady=20)
 
         train_rf_button = ttk.Button(content_frame, text="Train Random Forest Model", command=self.train_random_forest)
@@ -52,23 +52,45 @@ class MainApplication(tk.Tk):
         predict_button = ttk.Button(content_frame, text="Enter Data for Prediction", command=self.open_prediction_window)
         predict_button.pack(pady=10)
 
-    def open_visualization_window(self):
-        self.visual_window = tk.Toplevel(self)
-        self.visual_window.title("Data Visualizations")
-        self.visual_window.geometry("800x600")
-        self.visual_window.configure(background='#f0f0f0')
+    def open_visualization_type_window(self):
+        self.visual_type_window = tk.Toplevel(self)
+        self.visual_type_window.title("Choose Visualization Type")
+        self.visual_type_window.geometry("300x200")
+        self.visual_type_window.configure(background='#f0f0f0')
 
-        ttk.Button(self.visual_window, text="Plot Data", command=self.plot_data).pack(pady=10)
-        ttk.Button(self.visual_window, text="Histogram", command=self.plot_histogram).pack(pady=10)
-        ttk.Button(self.visual_window, text="Scatter Plot", command=self.plot_scatter).pack(pady=10)
-        ttk.Button(self.visual_window, text="Bar Chart - Claims by State", command=self.plot_bar_chart).pack(pady=10)
-        ttk.Button(self.visual_window, text="Histogram - Total Claims", command=self.plot_total_claims_histogram).pack(pady=10)
+        general_visual_button = ttk.Button(self.visual_type_window, text="Visualisation générale", command=self.open_general_visualization_window)
+        general_visual_button.pack(pady=10)
 
-    def plot_data(self):
-        data = self.db_manager.fetch_some_data()
-        fig, ax = plt.subplots()
-        ax.plot(data['x'], data['y'])
-        self.display_figure(fig)
+        fraud_visual_button = ttk.Button(self.visual_type_window, text="Visualisation en rapport avec les fraudes", command=self.open_fraud_visualization_window)
+        fraud_visual_button.pack(pady=10)
+
+    def open_general_visualization_window(self):
+        self.general_visual_window = tk.Toplevel(self)
+        self.general_visual_window.title("General Data Visualizations")
+        self.general_visual_window.geometry("300x400")
+        self.general_visual_window.configure(background='#f0f0f0')
+
+        ttk.Button(self.general_visual_window, text="Distribution de l'âge des assurés", command=self.plot_histogram).pack(pady=10)
+        ttk.Button(self.general_visual_window, text="Nombre de réclamations par état", command=self.plot_bar_chart).pack(pady=10)
+        ttk.Button(self.general_visual_window, text="Distribution des réclamations totales", command=self.plot_total_claims_histogram).pack(pady=10)
+        ttk.Button(self.general_visual_window, text="Heatmap des corrélations", command=self.plot_heatmap).pack(pady=10)
+
+    def open_fraud_visualization_window(self):
+        self.fraud_visual_window = tk.Toplevel(self)
+        self.fraud_visual_window.title("Fraud-related Data Visualizations")
+        self.fraud_visual_window.geometry("300x200")
+        self.fraud_visual_window.configure(background='#f0f0f0')
+
+        ttk.Button(self.fraud_visual_window, text="Bar Chart - Fraud by State", command=self.plot_fraud_by_state).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Pie Chart - Fraud Proportion", command=self.plot_fraud_proportion).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Bar Chart - Fraud by Age Group", command=self.plot_fraud_by_age_group).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Capital Gains", command=self.plot_fraud_by_capital_gain).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Months as Customer", command=self.plot_fraud_by_months_as_customer).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Umbrella Limit", command=self.plot_fraud_by_umbrella_limit).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Box Plot - Fraud by Capital Loss", command=self.plot_fraud_by_capital_loss).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Count Plot - Fraud by Incident Hour", command=self.plot_fraud_by_incident_hour).pack(pady=10)
+        ttk.Button(self.fraud_visual_window, text="Count Plot - Fraud by Bodily Injuries", command=self.plot_fraud_by_bodily_injuries).pack(pady=10)
+
 
     def plot_histogram(self):
         data = self.db_manager.fetch_histogram_data()
@@ -97,16 +119,154 @@ class MainApplication(tk.Tk):
         ax.set_ylabel('Fréquence')
         self.display_figure(fig)
 
-    def plot_scatter(self):
-        data = self.db_manager.fetch_scatter_data()
-        fig, ax = plt.subplots()
-        ax.scatter(data['x'], data['y'])
+
+    def plot_heatmap(self):
+        data = self.db_manager.fetch_all_data()
+        columns_to_keep = [
+            "months_as_customer", "age", "policy_deductable", "policy_annual_premium", "umbrella_limit",
+            "capital_gains", "capital_loss", "incident_hour_of_the_day", "number_of_vehicles_involved",
+            "bodily_injuries", "witnesses", "total_claim_amount", "injury_claim", "property_claim", "vehicle_claim"
+        ]
+        data = data[columns_to_keep]
+        
+        # Handling non-numeric data by encoding
+        for column in data.select_dtypes(include=['object']).columns:
+            try:
+                data[column] = data[column].astype(float)
+            except ValueError:
+                data[column] = LabelEncoder().fit_transform(data[column])
+
+    def plot_fraud_by_state(self):
+        data = self.db_manager.fetch_fraud_by_state()
+        fig, ax = plt.subplots(figsize=(10, 8))
+        sns.barplot(x=data['state'], y=data['fraud_count'], ax=ax)
+        ax.set_title('Nombre de fraudes par état')
+        ax.set_xlabel('État')
+        ax.set_ylabel('Nombre de fraudes')
         self.display_figure(fig)
 
+    def plot_fraud_proportion(self):
+        data = self.db_manager.fetch_fraud_proportion()
+        fig, ax = plt.subplots(figsize=(8, 6))
+        labels = 'Fraud', 'No Fraud'
+        sizes = [data['fraud'], data['no_fraud']]
+        ax.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=['red', 'blue'])
+        ax.set_title('Proportion de fraudes')
+        self.display_figure(fig)
+
+    def plot_fraud_by_age_group(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create age groups
+        bins = list(range(18, 70, 5))  # Creating bins from 0 to 100 with steps of 5
+        labels = [f'{i}-{i+4}' for i in bins[:-1]]
+        data['age_group'] = pd.cut(data['age'], bins=bins, labels=labels, right=False)
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.countplot(x='age_group', hue='fraud_reported', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Nombre de fraudes par tranche d\'âge')
+        ax.set_xlabel('Tranche d\'âge')
+        ax.set_ylabel('Nombre de cas')
+        ax.legend(title='Fraud Reported', labels=['No', 'Yes'])
+        self.display_figure(fig)
+
+    def plot_fraud_by_capital_gain(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.boxplot(x='fraud_reported', y='capital_gains', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des gains en capital par rapport aux fraudes')
+        ax.set_xlabel('Fraud Reported')
+        ax.set_ylabel('Capital Gains')
+        ax.set_xticklabels(['No', 'Yes'])
+        self.display_figure(fig)
+
+    def plot_fraud_by_months_as_customer(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.boxplot(x='fraud_reported', y='months_as_customer', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des mois en tant que client par rapport aux fraudes')
+        ax.set_xlabel('Fraud Reported')
+        ax.set_ylabel('Months as Customer')
+        ax.set_xticklabels(['No', 'Yes'])
+        self.display_figure(fig)
+
+    def plot_fraud_by_umbrella_limit(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.boxplot(x='fraud_reported', y='umbrella_limit', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des limites d\'assurance par rapport aux fraudes')
+        ax.set_xlabel('Fraud Reported')
+        ax.set_ylabel('Umbrella Limit')
+        ax.set_xticklabels(['No', 'Yes'])
+        self.display_figure(fig)
+
+    def plot_fraud_by_capital_loss(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.boxplot(x='fraud_reported', y='capital_loss', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des pertes en capital par rapport aux fraudes')
+        ax.set_xlabel('Fraud Reported')
+        ax.set_ylabel('Capital Loss')
+        ax.set_xticklabels(['No', 'Yes'])
+        self.display_figure(fig)
+
+
     def display_figure(self, fig):
-        canvas = FigureCanvasTkAgg(fig, master=self.visual_window)
+        visual_window = tk.Toplevel(self)
+        visual_window.title("Visualization")
+        visual_window.geometry("800x600")
+        canvas = FigureCanvasTkAgg(fig, master=visual_window)
         canvas.draw()
         canvas.get_tk_widget().pack(expand=True)
+
+    def plot_fraud_by_incident_hour(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.countplot(x='incident_hour_of_the_day', hue='fraud_reported', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des fraudes par heure de l\'incident')
+        ax.set_xlabel('Heure de l\'incident')
+        ax.set_ylabel('Nombre de cas')
+        ax.legend(title='Fraud Reported', labels=['No', 'Yes'])
+        self.display_figure(fig)
+
+    def plot_fraud_by_bodily_injuries(self):
+        data = self.db_manager.fetch_all_data()
+        # Encode 'fraud_reported' as 0 (No) and 1 (Yes)
+        data['fraud_reported'] = data['fraud_reported'].map({'N': 0, 'Y': 1})
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(14, 8))
+        sns.countplot(x='bodily_injuries', hue='fraud_reported', data=data, palette='coolwarm', ax=ax)
+        ax.set_title('Répartition des fraudes par blessures corporelles')
+        ax.set_xlabel('Blessures corporelles')
+        ax.set_ylabel('Nombre de cas')
+        ax.legend(title='Fraud Reported', labels=['No', 'Yes'])
+        self.display_figure(fig)
+
+
 
     def train_model(self, model, model_name):
         df = pd.read_csv("insurance_claims.csv")

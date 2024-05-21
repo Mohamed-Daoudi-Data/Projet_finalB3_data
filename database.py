@@ -109,6 +109,14 @@ class DatabaseManager:
         data = pd.read_sql(query, conn)
         conn.close()
         return {'x': data['age'], 'y': data['total_claim_amount']}
+    
+    def fetch_all_data(self):
+        """Fetch all data from the insurance_claims table."""
+        conn = self.connect()
+        query = "SELECT * FROM insurance_claims"
+        data = pd.read_sql(query, conn)
+        conn.close()
+        return data
 
 
 db_manager = DatabaseManager('database_insurance_claims.db')
